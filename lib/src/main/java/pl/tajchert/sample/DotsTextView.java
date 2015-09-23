@@ -78,13 +78,7 @@ public class DotsTextView extends TextView {
         textWidth = getPaint().measureText(".", 0, 1);
 
         ObjectAnimator dotOneJumpAnimator = createDotJumpAnimator(dotOne, 0);
-        dotOneJumpAnimator.addUpdateListener(new AnimatorUpdateListener() {
-
-            @Override
-            public void onAnimationUpdate(ValueAnimator valueAnimator) {
-                invalidate();
-            }
-        });
+        dotOneJumpAnimator.addUpdateListener(invalidatingListener);
         mAnimatorSet.playTogether(dotOneJumpAnimator, createDotJumpAnimator(dotTwo,
                 period / 6), createDotJumpAnimator(dotThree, period * 2 / 6));
 
@@ -129,13 +123,7 @@ public class DotsTextView extends TextView {
         createDotHideAnimator(dotThree, 2).start();
 
         ObjectAnimator dotTwoMoveRightToLeft = createDotHideAnimator(dotTwo, 1);
-        dotTwoMoveRightToLeft.addUpdateListener(new AnimatorUpdateListener() {
-
-            @Override
-            public void onAnimationUpdate(ValueAnimator valueAnimator) {
-                invalidate();
-            }
-        });
+        dotTwoMoveRightToLeft.addUpdateListener(invalidatingListener);
 
         dotTwoMoveRightToLeft.start();
         isHide = true;
@@ -147,13 +135,7 @@ public class DotsTextView extends TextView {
         dotThreeMoveRightToLeft.start();
 
         ObjectAnimator dotTwoMoveRightToLeft = createDotShowAnimator(dotTwo, 1);
-        dotTwoMoveRightToLeft.addUpdateListener(new AnimatorUpdateListener() {
-
-            @Override
-            public void onAnimationUpdate(ValueAnimator valueAnimator) {
-                invalidate();
-            }
-        });
+        dotTwoMoveRightToLeft.addUpdateListener(invalidatingListener);
 
         dotTwoMoveRightToLeft.start();
         isHide = false;
@@ -198,4 +180,11 @@ public class DotsTextView extends TextView {
     public void setPeriod(int period) {
         this.period = period;
     }
+
+    final AnimatorUpdateListener invalidatingListener = new AnimatorUpdateListener() {
+        @Override
+        public void onAnimationUpdate(ValueAnimator animation) {
+            invalidate();
+        }
+    };
 }
