@@ -15,9 +15,11 @@ import android.text.Spanned;
 import android.util.AttributeSet;
 import android.widget.TextView;
 
+import java.lang.ref.WeakReference;
+
 import pl.tajchert.waitingdots.R;
 
-public class DotsTextView extends TextView {
+public class DotsTextView extends TextView implements AnimatorUpdateListener {
 
     private JumpingSpan dotOne;
     private JumpingSpan dotTwo;
@@ -55,7 +57,7 @@ public class DotsTextView extends TextView {
         init(context, attrs);
     }
 
-    private void init(Context context, AttributeSet attrs) {
+    private void init(final Context context, AttributeSet attrs) {
         handler = new Handler(Looper.getMainLooper());
 
         if (attrs != null) {
@@ -78,7 +80,7 @@ public class DotsTextView extends TextView {
         textWidth = getPaint().measureText(".", 0, 1);
 
         ObjectAnimator dotOneJumpAnimator = createDotJumpAnimator(dotOne, 0);
-        dotOneJumpAnimator.addUpdateListener(invalidatingListener);
+        dotOneJumpAnimator.addUpdateListener(this);
         mAnimatorSet.playTogether(dotOneJumpAnimator, createDotJumpAnimator(dotTwo,
                 period / 6), createDotJumpAnimator(dotThree, period * 2 / 6));
 
@@ -123,7 +125,7 @@ public class DotsTextView extends TextView {
         createDotHideAnimator(dotThree, 2).start();
 
         ObjectAnimator dotTwoMoveRightToLeft = createDotHideAnimator(dotTwo, 1);
-        dotTwoMoveRightToLeft.addUpdateListener(invalidatingListener);
+        dotTwoMoveRightToLeft.addUpdateListener(this);
 
         dotTwoMoveRightToLeft.start();
         isHide = true;
@@ -135,7 +137,7 @@ public class DotsTextView extends TextView {
         dotThreeMoveRightToLeft.start();
 
         ObjectAnimator dotTwoMoveRightToLeft = createDotShowAnimator(dotTwo, 1);
-        dotTwoMoveRightToLeft.addUpdateListener(invalidatingListener);
+        dotTwoMoveRightToLeft.addUpdateListener(this);
 
         dotTwoMoveRightToLeft.start();
         isHide = false;
@@ -181,10 +183,8 @@ public class DotsTextView extends TextView {
         this.period = period;
     }
 
-    final AnimatorUpdateListener invalidatingListener = new AnimatorUpdateListener() {
-        @Override
-        public void onAnimationUpdate(ValueAnimator animation) {
-            invalidate();
-        }
-    };
+    @Override
+    public void onAnimationUpdate(ValueAnimator animation) {
+        invalidate();
+    }
 }
