@@ -15,8 +15,6 @@ import android.text.Spanned;
 import android.util.AttributeSet;
 import android.widget.TextView;
 
-import java.lang.ref.WeakReference;
-
 import pl.tajchert.waitingdots.R;
 
 public class DotsTextView extends TextView implements AnimatorUpdateListener {
@@ -44,29 +42,26 @@ public class DotsTextView extends TextView implements AnimatorUpdateListener {
 
     public DotsTextView(Context context) {
         super(context);
-        init(context, null);
+        init(obtainStyledDataFrom(context, null, ((int) getTextSize() / 4)));
     }
 
     public DotsTextView(Context context, AttributeSet attrs) {
         super(context, attrs);
-        init(context, attrs);
+        init(obtainStyledDataFrom(context, attrs, ((int) getTextSize() / 4)));
     }
 
     public DotsTextView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        init(context, attrs);
+        init(obtainStyledDataFrom(context, attrs, ((int) getTextSize() / 4)));
     }
 
-    private void init(final Context context, AttributeSet attrs) {
+    private void init(final StyledData styledData) {
         handler = new Handler(Looper.getMainLooper());
 
-        if (attrs != null) {
-            TypedArray typedArray = context.obtainStyledAttributes(attrs, R.styleable.WaitingDots);
-            period = typedArray.getInt(R.styleable.WaitingDots_period, 6000);
-            jumpHeight = typedArray.getInt(R.styleable.WaitingDots_jumpHeight, (int) (getTextSize() / 4));
-            autoPlay = typedArray.getBoolean(R.styleable.WaitingDots_autoplay, true);
-            typedArray.recycle();
-        }
+        period = styledData.getPeriod();
+        jumpHeight = styledData.getJumpHeight();
+        autoPlay = styledData.isAutoPlay();
+
         dotOne = new JumpingSpan();
         dotTwo = new JumpingSpan();
         dotThree = new JumpingSpan();
@@ -85,7 +80,7 @@ public class DotsTextView extends TextView implements AnimatorUpdateListener {
                 period / 6), createDotJumpAnimator(dotThree, period * 2 / 6));
 
         isPlaying = autoPlay;
-        if(autoPlay) {
+        if (autoPlay) {
             start();
         }
     }
@@ -186,5 +181,49 @@ public class DotsTextView extends TextView implements AnimatorUpdateListener {
     @Override
     public void onAnimationUpdate(ValueAnimator animation) {
         invalidate();
+    }
+
+    private static StyledData obtainStyledDataFrom(final Context context,
+                                                   final AttributeSet attrs,
+                                                   final int defaultJumpHeight) {
+        if (attrs != null) {
+            TypedArray typedArray = context.obtainStyledAttributes(attrs, R.styleable.WaitingDots);
+            int period = typedArray.getInt(R.styleable.WaitingDots_period, 6000);
+            int jumpHeight = typedArray.getInt(R.styleable.WaitingDots_jumpHeight, defaultJumpHeight);
+            boolean autoPlay = typedArray.getBoolean(R.styleable.WaitingDots_autoplay, true);
+            typedArray.recycle();
+            return new StyledData(autoPlay, jumpHeight, period);
+        } else {
+            return new StyledData(defaultJumpHeight);
+        }
+
+    }
+
+    private static class StyledData {
+        private final boolean autoPlay;
+        private final int jumpHeight;
+        private final int period;
+
+        public StyledData(int jumpHeight) {
+            this(true, jumpHeight, 6000);
+        }
+
+        public StyledData(boolean autoPlay, int jumpHeight, int period) {
+            this.autoPlay = autoPlay;
+            this.jumpHeight = jumpHeight;
+            this.period = period;
+        }
+
+        public boolean isAutoPlay() {
+            return autoPlay;
+        }
+
+        public int getJumpHeight() {
+            return jumpHeight;
+        }
+
+        public int getPeriod() {
+            return period;
+        }
     }
 }
