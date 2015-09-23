@@ -2,9 +2,6 @@ package pl.tajchert.sample;
 
 import android.animation.TypeEvaluator;
 
-/**
- *
- */
 public class DotsAnimationEvaluator implements TypeEvaluator<Number>{
 
     @Override
