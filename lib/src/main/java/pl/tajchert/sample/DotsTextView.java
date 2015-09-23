@@ -101,14 +101,9 @@ public class DotsTextView extends TextView {
     }
 
     private ObjectAnimator createDotJumpAnimator(JumpingSpan jumpingSpan, long delay) {
-        ObjectAnimator jumpAnimator = ObjectAnimator.ofFloat(jumpingSpan, "translationY", 0, -jumpHeight);
-        jumpAnimator.setEvaluator(new TypeEvaluator<Number>() {
-
-            @Override
-            public Number evaluate(float fraction, Number from, Number to) {
-                return Math.max(0, Math.sin(fraction * Math.PI * 2)) * (to.floatValue() - from.floatValue());
-            }
-        });
+        final ObjectAnimator jumpAnimator = ObjectAnimator.ofFloat(jumpingSpan, "translationY", 0, -jumpHeight);
+        final TypeEvaluator dotsEvaluator = new DotsAnimationEvaluator();
+        jumpAnimator.setEvaluator(dotsEvaluator);
         jumpAnimator.setDuration(period);
         jumpAnimator.setStartDelay(delay);
         jumpAnimator.setRepeatCount(ValueAnimator.INFINITE);
