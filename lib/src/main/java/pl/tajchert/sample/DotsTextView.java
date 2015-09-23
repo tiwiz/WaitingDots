@@ -17,7 +17,7 @@ import android.widget.TextView;
 
 import pl.tajchert.waitingdots.R;
 
-public class DotsTextView extends TextView {
+public class DotsTextView extends TextView implements AnimatorUpdateListener {
 
     private JumpingSpan dotOne;
     private JumpingSpan dotTwo;
@@ -42,29 +42,26 @@ public class DotsTextView extends TextView {
 
     public DotsTextView(Context context) {
         super(context);
-        init(context, null);
+        init(obtainStyledDataFrom(context, null, ((int) getTextSize() / 4)));
     }
 
     public DotsTextView(Context context, AttributeSet attrs) {
         super(context, attrs);
-        init(context, attrs);
+        init(obtainStyledDataFrom(context, attrs, ((int) getTextSize() / 4)));
     }
 
     public DotsTextView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        init(context, attrs);
+        init(obtainStyledDataFrom(context, attrs, ((int) getTextSize() / 4)));
     }
 
-    private void init(Context context, AttributeSet attrs) {
+    private void init(final StyledData styledData) {
         handler = new Handler(Looper.getMainLooper());
 
-        if (attrs != null) {
-            TypedArray typedArray = context.obtainStyledAttributes(attrs, R.styleable.WaitingDots);
-            period = typedArray.getInt(R.styleable.WaitingDots_period, 6000);
-            jumpHeight = typedArray.getInt(R.styleable.WaitingDots_jumpHeight, (int) (getTextSize() / 4));
-            autoPlay = typedArray.getBoolean(R.styleable.WaitingDots_autoplay, true);
-            typedArray.recycle();
-        }
+        period = styledData.getPeriod();
+        jumpHeight = styledData.getJumpHeight();
+        autoPlay = styledData.isAutoPlay();
+
         dotOne = new JumpingSpan();
         dotTwo = new JumpingSpan();
         dotThree = new JumpingSpan();
@@ -78,18 +75,12 @@ public class DotsTextView extends TextView {
         textWidth = getPaint().measureText(".", 0, 1);
 
         ObjectAnimator dotOneJumpAnimator = createDotJumpAnimator(dotOne, 0);
-        dotOneJumpAnimator.addUpdateListener(new AnimatorUpdateListener() {
-
-            @Override
-            public void onAnimationUpdate(ValueAnimator valueAnimator) {
-                invalidate();
-            }
-        });
+        dotOneJumpAnimator.addUpdateListener(this);
         mAnimatorSet.playTogether(dotOneJumpAnimator, createDotJumpAnimator(dotTwo,
                 period / 6), createDotJumpAnimator(dotThree, period * 2 / 6));
 
         isPlaying = autoPlay;
-        if(autoPlay) {
+        if (autoPlay) {
             start();
         }
     }
@@ -101,14 +92,9 @@ public class DotsTextView extends TextView {
     }
 
     private ObjectAnimator createDotJumpAnimator(JumpingSpan jumpingSpan, long delay) {
-        ObjectAnimator jumpAnimator = ObjectAnimator.ofFloat(jumpingSpan, "translationY", 0, -jumpHeight);
-        jumpAnimator.setEvaluator(new TypeEvaluator<Number>() {
-
-            @Override
-            public Number evaluate(float fraction, Number from, Number to) {
-                return Math.max(0, Math.sin(fraction * Math.PI * 2)) * (to.floatValue() - from.floatValue());
-            }
-        });
+        final ObjectAnimator jumpAnimator = ObjectAnimator.ofFloat(jumpingSpan, "translationY", 0, -jumpHeight);
+        final TypeEvaluator dotsEvaluator = new DotsAnimationEvaluator();
+        jumpAnimator.setEvaluator(dotsEvaluator);
         jumpAnimator.setDuration(period);
         jumpAnimator.setStartDelay(delay);
         jumpAnimator.setRepeatCount(ValueAnimator.INFINITE);
@@ -134,13 +120,7 @@ public class DotsTextView extends TextView {
         createDotHideAnimator(dotThree, 2).start();
 
         ObjectAnimator dotTwoMoveRightToLeft = createDotHideAnimator(dotTwo, 1);
-        dotTwoMoveRightToLeft.addUpdateListener(new AnimatorUpdateListener() {
-
-            @Override
-            public void onAnimationUpdate(ValueAnimator valueAnimator) {
-                invalidate();
-            }
-        });
+        dotTwoMoveRightToLeft.addUpdateListener(this);
 
         dotTwoMoveRightToLeft.start();
         isHide = true;
@@ -152,13 +132,7 @@ public class DotsTextView extends TextView {
         dotThreeMoveRightToLeft.start();
 
         ObjectAnimator dotTwoMoveRightToLeft = createDotShowAnimator(dotTwo, 1);
-        dotTwoMoveRightToLeft.addUpdateListener(new AnimatorUpdateListener() {
-
-            @Override
-            public void onAnimationUpdate(ValueAnimator valueAnimator) {
-                invalidate();
-            }
-        });
+        dotTwoMoveRightToLeft.addUpdateListener(this);
 
         dotTwoMoveRightToLeft.start();
         isHide = false;
@@ -202,5 +176,54 @@ public class DotsTextView extends TextView {
 
     public void setPeriod(int period) {
         this.period = period;
+    }
+
+    @Override
+    public void onAnimationUpdate(ValueAnimator animation) {
+        invalidate();
+    }
+
+    private static StyledData obtainStyledDataFrom(final Context context,
+                                                   final AttributeSet attrs,
+                                                   final int defaultJumpHeight) {
+        if (attrs != null) {
+            TypedArray typedArray = context.obtainStyledAttributes(attrs, R.styleable.WaitingDots);
+            int period = typedArray.getInt(R.styleable.WaitingDots_period, 6000);
+            int jumpHeight = typedArray.getInt(R.styleable.WaitingDots_jumpHeight, defaultJumpHeight);
+            boolean autoPlay = typedArray.getBoolean(R.styleable.WaitingDots_autoplay, true);
+            typedArray.recycle();
+            return new StyledData(autoPlay, jumpHeight, period);
+        } else {
+            return new StyledData(defaultJumpHeight);
+        }
+
+    }
+
+    private static class StyledData {
+        private final boolean autoPlay;
+        private final int jumpHeight;
+        private final int period;
+
+        public StyledData(int jumpHeight) {
+            this(true, jumpHeight, 6000);
+        }
+
+        public StyledData(boolean autoPlay, int jumpHeight, int period) {
+            this.autoPlay = autoPlay;
+            this.jumpHeight = jumpHeight;
+            this.period = period;
+        }
+
+        public boolean isAutoPlay() {
+            return autoPlay;
+        }
+
+        public int getJumpHeight() {
+            return jumpHeight;
+        }
+
+        public int getPeriod() {
+            return period;
+        }
     }
 }
